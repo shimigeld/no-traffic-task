@@ -56,6 +56,7 @@ describe("SideMenuHeader", () => {
     render(<SideMenuHeader />);
     await userEvent.click(screen.getByRole("button", { name: /cancel drawing/i }));
     expect(ctx.setDrawingMode).toHaveBeenCalledWith(false);
+    expect(ctx.setDrawingPoints).toHaveBeenCalledWith([]);
     expect(ctx.setNameDialogOpen).toHaveBeenCalledWith(false);
     expect(ctx.selectPolygon).not.toHaveBeenCalled();
   });

@@ -32,6 +32,12 @@ describe("PolygonsList", () => {
     expect(screen.getByText(/loading polygons/i)).toBeVisible();
   });
 
+  it("shows loader during background refetches", () => {
+    mockUsePolygonsContext.mockReturnValue({ ...baseValue(), isFetching: true });
+    render(<PolygonsList />);
+    expect(screen.getByText(/loading polygons/i)).toBeVisible();
+  });
+
   it("renders list items when polygons exist", () => {
     mockUsePolygonsContext.mockReturnValue({
       ...baseValue(),

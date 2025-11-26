@@ -63,6 +63,26 @@ describe("CanvasHeader", () => {
     expect(screen.getByText(/place vertices/i)).toBeInTheDocument();
   });
 
+  it("shows default guidance when not drawing", () => {
+    render(<CanvasHeader />);
+    expect(screen.getByText(/hover and click polygons/i)).toBeInTheDocument();
+  });
+
+  it("does not render finish button outside drawing mode", () => {
+    render(<CanvasHeader />);
+    expect(screen.queryByRole("button", { name: /finish polygon/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps delete disabled when selection missing from list", () => {
+    const ctx = baseContext();
+    ctx.selectedId = "ghost";
+    ctx.polygons = [{ id: "other", name: "Other", points: [] as [number, number][] }];
+    mockUsePolygonsContext.mockReturnValue(ctx);
+    render(<CanvasHeader />);
+    const deleteButton = screen.getByRole("button", { name: /delete selected/i });
+    expect(deleteButton).toBeDisabled();
+  });
+
   it("does not open naming dialog when finish disabled", async () => {
     const ctx = baseContext();
     ctx.drawingMode = true;

@@ -37,8 +37,8 @@ const createContextValue = () => ({
       ] as [number, number][],
     },
   ],
-  selectedId: null,
-  hoveredId: null,
+  selectedId: null as string | null,
+  hoveredId: null as string | null,
   drawingMode: false,
   drawingPoints: [] as Point[],
   setDrawingPoints: vi.fn(),
@@ -102,6 +102,9 @@ describe("CanvasEditor", () => {
     mockGetCanvasPoint.mockReturnValue([1, 1] as Point);
     mockIsPointInPolygon.mockReturnValue(true);
     lastImageInstance = null;
+    context2d.fillStyle = "";
+    context2d.strokeStyle = "";
+    context2d.lineWidth = 1;
     const contextValue = createContextValue();
     mockUsePolygonsContext.mockReturnValue(contextValue);
   });
@@ -252,5 +255,62 @@ describe("CanvasEditor", () => {
     expect(canvas).toBeTruthy();
     fireEvent.click(canvas!);
     expect(contextValue.selectPolygon).toHaveBeenCalledWith(null);
+  });
+
+  it("applies crosshair cursor while drawing", () => {
+    const contextValue = createContextValue();
+    contextValue.drawingMode = true;
+    mockUsePolygonsContext.mockReturnValue(contextValue);
+    const { container } = render(<CanvasEditor />);
+    const canvas = container.querySelector("canvas");
+    expect(canvas).not.toBeNull();
+    expect(canvas!.style.cursor).toBe("crosshair");
+  });
+
+  it("uses pointer cursor when hovering polygons", () => {
+    const contextValue = createContextValue();
+    contextValue.hoveredId = "poly-1";
+    mockUsePolygonsContext.mockReturnValue(contextValue);
+    const { container } = render(<CanvasEditor />);
+    const canvas = container.querySelector("canvas");
+    expect(canvas).not.toBeNull();
+    expect(canvas!.style.cursor).toBe("pointer");
+  });
+
+  it("falls back to default cursor when idle", () => {
+    const { container } = render(<CanvasEditor />);
+    const canvas = container.querySelector("canvas");
+    expect(canvas).not.toBeNull();
+    expect(canvas!.style.cursor).toBe("default");
+  });
+
+  it("applies selected styling when polygon id matches selection", async () => {
+    const contextValue = createContextValue();
+    contextValue.selectedId = "poly-1";
+    mockUsePolygonsContext.mockReturnValue(contextValue);
+    render(<CanvasEditor />);
+    await waitFor(() => {
+      expect(context2d.lineWidth).toBe(3);
+      expect(context2d.strokeStyle).toBe("#f87171");
+      expect(context2d.fillStyle).toBe("rgba(248, 113, 113, 0.35)");
+    });
+  });
+
+  it("uses hover styling when polygon is only hovered", async () => {
+    const contextValue = createContextValue();
+    contextValue.hoveredId = "poly-1";
+    mockUsePolygonsContext.mockReturnValue(contextValue);
+    render(<CanvasEditor />);
+    await waitFor(() => {
+      expect(context2d.lineWidth).toBe(2);
+      expect(context2d.strokeStyle).toBe("#38bdf8");
+      expect(context2d.fillStyle).toBe("rgba(14, 165, 233, 0.35)");
+    });
+  });
+
+  it("bails out gracefully when 2d context is unavailable", () => {
+    getContextSpy.mockReturnValueOnce(null as unknown as CanvasRenderingContext2D);
+    expect(() => render(<CanvasEditor />)).not.toThrow();
+    expect(context2d.clearRect).not.toHaveBeenCalled();
   });
 });
